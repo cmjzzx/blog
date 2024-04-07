@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "My Blog",
+  title: "五竹的Blog",
   description: "我的博客自留地",
   lang: 'zh-Hans',
   cleanUrls: true,
@@ -24,9 +24,11 @@ export default defineConfig({
     sidebar: [
       {
         text: '2024',
+        collapsed: false,
         items: [
-          { text: '部署与使用 Squid 正向代理', link: '/posts/2024/部署与使用 Squid 正向代理' },
-          { text: '消息摘要、加解密、签名、证书', link: '/posts/2024/消息摘要、加解密、签名、证书' }
+          { text: '部署与使用 Squid 正向代理', link: '/posts/2024/10-install-and-use-squid' },
+          { text: '消息摘要、加解密、签名、证书', link: '/posts/2024/09-digest-crypto-sign-cert' },
+          { text: 'Vue 前端资源本地缓存优化', link: '/posts/2024/08-vue-assets-cache-optimization' }
         ]
       }
     ],
