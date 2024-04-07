@@ -7,8 +7,15 @@ export default defineConfig({
   lang: 'zh-Hans',
   cleanUrls: true,
   lastUpdated: true,
+  head: [
+    ['link', { rel: 'icon', href: '/favicon.ico' }],
+  ],
+  sitemap: {
+    hostname: 'https://blog.leqiutong.xyz'
+  },
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
+    logo: { src: '/uploads/headimg.jpg' },
     nav: [
       { text: '首页', link: '/' },
       { text: '关于', link: '/posts/about' }
@@ -29,11 +36,16 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
+      { icon: 'github', link: 'https://github.com/cmjzzx/blog' }
     ],
 
     footer: {
       copyright: `版权所有 © 2024-${new Date().getFullYear()} 五竹 &nbsp; &nbsp; Powered by VitePress`,
+    },
+
+    editLink: {
+      text: '查看源代码',
+      pattern: 'https://github.com/cmjzzx/blog/tree/main/src/:path',
     },
 
     docFooter: {
