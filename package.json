@@ -4,5 +4,10 @@
     "build": "vitepress build src",
     "cfbuild": "git fetch --unshallow && vitepress build src",
     "preview": "vitepress preview src"
+  },
+  "devDependencies": {
+    "gitalk": "^1.8.0",
+    "vitepress": "^1.0.2",
+    "vue": "^3.4.21"
   }
 }
