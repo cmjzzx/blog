@@ -28,7 +28,8 @@ export default defineConfig({
         items: [
           { text: '部署与使用 Squid 正向代理', link: '/posts/2024/10-install-and-use-squid' },
           { text: '消息摘要、加解密、签名、证书', link: '/posts/2024/09-digest-crypto-sign-cert' },
-          { text: 'Vue 前端资源本地缓存优化', link: '/posts/2024/08-vue-assets-cache-optimization' }
+          { text: 'Vue 前端资源本地缓存优化', link: '/posts/2024/08-vue-assets-cache-optimization' },
+          { text: '使用 Python 脚本监控域名和 SSL 证书的有效期', link: '/posts/2024/07-use-python-to-monitor-domain-and-ssl' }
         ]
       }
     ],
