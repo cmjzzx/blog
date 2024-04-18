@@ -60,7 +60,7 @@
 
 我们可以在服务器上用 openssl 命令生成一对公钥和私钥，然后将域名、申请者身份信息（国家/省份/城市/公司名称/部门名称）、公钥（注意不是私钥，私钥是无论如何也不能泄露的）等其他信息整合在一起，生成 .csr 文件（即证书签名请求文件）发给 CA 机构。这些操作也可以通过网站在线完成，省去了使用命令行的麻烦。
 
-CA 机构收到申请后，会通过各种手段验证申请者的组织信息和个人信息，如无异常（组织存在/企业合法/确实是域名的拥有者，这些才算正常），CA 就会使用不可逆的散列算法对 .csr 里的明文信息先做一个 HASH，得到一个信息摘要，再用 CA 自己的私钥对这个信息摘要进行加密，生成一串密文，密文即是所说的签名（或者叫 CA 签名/数字签名）。签名 + .csr 明文信息，即是证书（或者叫数字证书），最后 CA 把这个证书返回给申请人，这样一份**数字 证书**就颁发出来了。
+CA 机构收到申请后，会通过各种手段验证申请者的组织信息和个人信息，如无异常（组织存在/企业合法/确实是域名的拥有者，这些才算正常），CA 就会使用不可逆的散列算法对 .csr 里的明文信息先做一个 HASH，得到一个信息摘要，再用 CA 自己的私钥对这个信息摘要进行加密，生成一串密文，密文即是所说的签名（或者叫 CA 签名/数字签名）。签名 + .csr 明文信息，即是证书（或者叫数字证书），最后 CA 把这个证书返回给申请人，这样一份**数字证书**就颁发出来了。
 
 在 CA 使用自己的私钥给我们生成签名的这个过程里，CA 叫 Issuer，我们叫 Subject。据此我们也可以想象，就是根证书的 Issuer 和 Subject，其实都是它自己。
 
@@ -118,7 +118,7 @@ CA 机构收到申请后，会通过各种手段验证申请者的组织信息�
    
    ```bash
    # 使用上一步生成的 server.key 文件，并将请求保存在 server.csr 文件中
-   # 在生成域名 CSR 时，需要输入一些关于组织和域名的信息，这些信息将被包含在证书中，这一步需要注意，一定要设置成最终我们要使用的域名，最好是设置成指定的单域名，也可以设置成通配符域名
+   # 在生成域名 CSR 时，需要输入一些关于组织和域名的信息，这些信息将被包含在证书中，这一步需要注意，一定要设置成最终我们要使用的域名，最好是设置成指定的单域名，也可以设置成多域名或通配符域名
    openssl req -new -key server.key -out server.csr
    ```
 
@@ -130,49 +130,49 @@ CA 机构收到申请后，会通过各种手段验证申请者的组织信息�
    openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365
    ```
 
-6. 在 CSR 中包含 SAN（主题备用名称，浏览器通常读取这个，与请求的域名进行比较） 信息
-当我们要为一个证书支持多个域名或子域名时（例如，通配符证书  `*.example.com`  或同时支持  `example.com`  和  `sub.example.com` ），需要在生成 CSR 的过程中包含 SAN 信息。以下是具体步骤：
+6. （可选，类似于上面的步骤 4 和步骤 5 ）在 CSR 中包含 SAN（主题备用名称，浏览器通常读取这个，与请求的域名进行比较） 信息
 
+   当我们要为一个证书支持多个域名或子域名时（例如，通配符证书  `*.example.com`  或同时支持  `example.com`  和  `sub.example.com` ），需要在生成 CSR 的过程中包含 SAN 信息。以下是具体步骤：
 
-1. **创建 CSR 配置文件**：
-创建一个新的配置文件（例如  `csr_with_san.cnf` ）来包含 SAN 信息。该文件可能如下所示：
-```
-[req]
-default_bits = 2048
-prompt = no
-default_md = sha256
-distinguished_name = dn
-req_extensions = req_ext # 指定请求扩展
-[dn]
-C = CN
-ST = ZJ
-L = HZ
-O = ZJKJ
-OU = PD
-emailAddress = zhuzhengxing@zhuojianchina.com
-CN = example.com # 主域名
-[req_ext]
-subjectAltName = @alt_names
-[alt_names]
-DNS.1 = example.com
-DNS.2 = *.example.com
-DNS.3 = sub.example.com
-```
-在  `[alt_names]`  部分，我们可以列出所有需要支持的域名。
+   1. **创建 CSR 配置文件**：
+      创建一个新的配置文件（例如  `csr_with_san.cnf` ）来包含 SAN 信息。该文件可能如下所示：
+      ```
+      [req]
+      default_bits = 2048
+      prompt = no
+      default_md = sha256
+      distinguished_name = dn
+      req_extensions = req_ext # 指定请求扩展
+      [dn]
+      C = CN
+      ST = ZJ
+      L = HZ
+      O = ZJKJ
+      OU = PD
+      emailAddress = zhuzhengxing@zhuojianchina.com
+      CN = example.com # 主域名
+      [req_ext]
+      subjectAltName = @alt_names
+      [alt_names]
+      DNS.1 = example.com
+      DNS.2 = *.example.com
+      DNS.3 = sub.example.com
+      ```
+      在  `[alt_names]`  部分，我们可以列出所有需要支持的域名。如果在这里只写了一个域名，那就跟上面的 CN 部分写的域名保持一致，这样就会生成一个单域名证书。
 
-2. **使用配置文件生成 CSR**：
-使用带 SAN 信息的配置文件生成新的 CSR：
- `openssl req -new -key server.key -out server.csr -config csr_with_san.cnf` 
-这条命令使用之前创建的私钥  `server.key`  和新的配置文件  `csr_with_san.cnf`  来生成一个包含 SAN 信息的 CSR。
+   2. **使用配置文件生成 CSR**：
+   使用带 SAN 信息的配置文件生成新的 CSR：
+   `openssl req -new -key server.key -out server.csr -config csr_with_san.cnf` 
+   这条命令使用之前创建的私钥  `server.key`  和新的配置文件  `csr_with_san.cnf`  来生成一个包含 SAN 信息的 CSR。
 
-3. **使用 CA 根证书签发带 SAN 的服务器证书**：
-按照之前的步骤，使用根证书和其私钥对该 CSR 进行签名：
- `openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365 -extfile csr_with_san.cnf -extensions req_ext` 
-注意这里使用了  `extfile`  和  `extensions`  选项来确保 SAN 被包含在签发的证书中。
+   3. **使用 CA 根证书签发带 SAN 的服务器证书**：
+   按照之前的步骤，使用根证书和其私钥对该 CSR 进行签名：
+   `openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365 -extfile csr_with_san.cnf -extensions req_ext` 
+   注意这里使用了  `extfile`  和  `extensions`  选项来确保 SAN 被包含在签发的证书中。
 
-通过以上步骤，就能生成一个支持多个域名的服务器证书，适用于更复杂的环境或配置要求。这样生成的证书在涵盖多个特定域名时会更加灵活和实用。
+   通过以上步骤，就能生成一个支持多个域名的服务器证书，适用于更复杂的环境或配置要求。这样生成的证书在涵盖多个特定域名时会更加灵活和实用。
 
-7. 将证书和私钥配置到服务器上
+7. 将服务器域名的证书和私钥配置到 Nginx 服务器上
    
    最后，我们将生成的 server.crt 和 server.key 文件拷贝到服务器上，并将它们配置到 nginx 的证书和私钥文件路径里。
 

@@ -130,7 +130,7 @@ docker run -e http_proxy=$http_proxy -e https_proxy=$https_proxy -e no_proxy=$no
 
 ### 已有的 Docker 容器不能直接修改
 
-对于已存在的 Docker 容器，直接设置环境变量<mark>**是无效的**</mark>。最佳实践是使用新的环境变量，重建容器，步骤如下：
+对于已存在的 Docker 容器，直接设置环境变量<mark>**是无效的**</mark>（有些设置可以通过 docker update 命令来修改，如 CPU、内存等，但环境变量不行）。最佳实践是使用新的环境变量，重建容器，步骤如下：
 
 1. **创建容器的新镜像**：首先，从正在运行的容器上，创建一个新的镜像，并命名成 new_image_name（示例）。
 
