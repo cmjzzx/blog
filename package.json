@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "vitepress dev src",
     "build": "git fetch --unshallow && vitepress build src",
-    "cfbuild": "git fetch --unshallow && vitepress build src",
     "preview": "vitepress preview src"
   },
   "devDependencies": {
