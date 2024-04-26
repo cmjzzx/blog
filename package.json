@@ -1,7 +1,10 @@
 {
+  "name": "wuzhu-blog",
+  "version": "0.0.1",
+  "private": true,
   "scripts": {
     "dev": "vitepress dev src",
-    "build": "vitepress build src",
+    "build": "git fetch --unshallow && vitepress build src",
     "cfbuild": "git fetch --unshallow && vitepress build src",
     "preview": "vitepress preview src"
   },
