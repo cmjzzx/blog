@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "五竹的Blog",
+  title: "五竹的 Blog",
   description: "我的博客自留地",
   lang: 'zh-Hans',
   cleanUrls: true,
