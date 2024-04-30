@@ -6,6 +6,9 @@ hero:
   name: "五竹的自留地"
   # text: "我的博客自留地"
   tagline: 攻人之过毋太严，要思其堪受<br>教人之善毋过高，当使其可从
+  image:
+    src: /uploads/personal-technology-blog.webp
+    alt: personal-technology-blog
   actions:
     - theme: brand
       text: 阅读博客
