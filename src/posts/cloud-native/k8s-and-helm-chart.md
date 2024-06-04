@@ -1,6 +1,6 @@
-## 使用 Kubernetes 和 Helm Chart 部署和管理微服务
+# 使用 Kubernetes 和 Helm Chart 部署和管理微服务
 
-### 引言
+## 引言
 
 嘿，大家好！今天我们来聊聊如何使用 Kubernetes 和 Helm Chart 来部署和管理微服务。
 
@@ -10,11 +10,11 @@
 
 本文会简单介绍一下这些工具，并展示如何利用它们来提高开发效率。内容粗略，仅做参考。
 
-### 什么是 Kubernetes？
+## 什么是 Kubernetes？
 
 Kubernetes，简称 K8s，是一个**开源的**容器编排（Orchestrator）平台，用来管理那些分布在多个服务器节点上的容器。它能自动处理容器的部署、扩展和管理，还能实现负载均衡、故障恢复、滚动更新等功能。
 
-#### Kubernetes 的核心组件
+### Kubernetes 的核心组件
 
 ![Kubernetes 组件](/uploads/components-of-kubernetes.png)
 
@@ -28,7 +28,7 @@ Kubernetes，简称 K8s，是一个**开源的**容器编排（Orchestrator）�
 
 这些组件一起工作，让 Kubernetes 可以轻松管理**成千上万个**容器，并确保它们始终按照我们期望的状态良好运行。
 
-#### Kubernetes 中常见的资源类型
+### Kubernetes 中常见的资源类型
 
 - **Pod（容器组）**：Kubernetes 中的最小部署单元，通常包含一个或多个容器，具有共享的存储、网络和配置。
 - **Service（服务）**：定义了一组 Pod 的逻辑集合，并提供一个稳定的访问入口（IP 地址和端口），即使 Pod 在重启或移动时也不会改变。访问 Service 就会访问到后端的 Pod 容器组，Service 有点像虚拟 IP 的概念，只不过它能自动处理和 Pod 容器组的绑定，对Service 的调用者来说是透明的，调用者不需要关心 Service 是怎么和 Pod 绑定的。
@@ -38,14 +38,14 @@ Kubernetes，简称 K8s，是一个**开源的**容器编排（Orchestrator）�
 - **Job（任务）**：工作负载类型之一，是一次性的任务，完成即退出，用于确保指定数量的 Pod 成功执行/结束某种任务，如数据迁移类任务。
 - **CronJob（定时任务）**：工作负载类型之一，是周期性的任务，按照预定的时间计划，定时调度并运行 Job。
 
-#### Kubernetes 中的 API 相关概念
+### Kubernetes 中的 API 相关概念
 
 - **API 资源**：Kubernetes 中的所有对象（如 Pod、Service 等）都是 API 资源，可以通过 REST API 进行操作。
 - **API 版本**：为了兼容性，Kubernetes 提供多个 API 版本，如 v1、v1beta1。通常，稳定的资源使用 v1 版本。
 - **自定义资源 (CRD)**：允许用户定义自己的资源类型，扩展 Kubernetes API，用于实现特定的业务需求。
 - **控制器和操作符**：控制器是用于管理资源状态的程序，而操作符（Operator）是控制器的一个特定实现，用于管理复杂的应用程序生命周期。
 
-### 什么是 Helm Chart？
+## 什么是 Helm Chart？
 
 Helm 是适用于 Kubernetes 集群的包管理工具，它用 Helm Chart（Chart 可以翻译成图表文件或模板文件）来定义、安装和管理 Kubernetes 应用。Helm Chart 就像一个打包好的应用模板，可以帮我们简化和自动化 K8s 集群应用的部署。Helm 的主要组件包括：
 
@@ -54,7 +54,7 @@ Helm 是适用于 Kubernetes 集群的包管理工具，它用 Helm Chart（Char
 
 有了 Helm，就可以轻松地将复杂的 Kubernetes 应用打包成一个 Chart 包，并进行安装、更新、版本控制和复用了。
 
-#### Helm 图表的主要组成部分包括如下
+### Helm 图表的主要组成部分包括如下
 
 1. **Chart.yaml**：定义图表的基本信息元数据，如名称、版本、描述等。
 2. **values.yaml**：包含用户可自定义的配置值，通过该文件可以覆盖默认配置，这个文件最为重要。
@@ -77,9 +77,9 @@ mychart/
     _helpers.tpl
 ```
 
-### 部署微服务
+## 部署微服务
 
-#### 1. 创建 Kubernetes 集群
+### 1. 创建 Kubernetes 集群
 
 首先，我们需要一个部署 Kubernetes 集群。可以使用本地安装的 Minikube，或者云服务商的 Kubernetes 相关产品来创建集群。以下是 [使用 Minikube 创建本地 Kubernetes 集群](https://kubernetes.io/zh-cn/docs/tutorials/hello-minikube/#create-a-minikube-cluster) 的示例：
 
@@ -89,7 +89,7 @@ minikube start
 
 这样，Minikube 会在本地启动一个单节点的 Kubernetes 集群，非常适合开发和测试使用。
 
-#### 2. 编写 Dockerfile
+### 2. 编写 Dockerfile
 
 接下来，为每个微服务编写 Dockerfile，将应用程序打包成容器镜像。以下是一个简单的 Node.js 应用的 Dockerfile 示例：
 
@@ -104,7 +104,7 @@ EXPOSE 3000
 
 这个 Dockerfile 使用 Node.js 官方镜像，复制应用代码到容器中，安装依赖并启动应用，并确保应用在 Dockerfile 中正确暴露端口。
 
-#### 3. 构建和推送 Docker 镜像
+### 3. 构建和推送 Docker 镜像
 
 使用 Docker 构建镜像并推送到镜像仓库（如 Docker Hub 或私有的 Harbor Registry 仓库，推送之前需要先用 docker login 命令进行登录，并确保有权限），示例如下：
 
@@ -123,7 +123,7 @@ docker push projectname/myapp:latest
 ```
 构建完成后，镜像会被推送到仓库，方便 Kubernetes 拉取和部署。
 
-#### 4. 编写 Kubernetes 部署文件
+### 4. 编写 Kubernetes 部署文件
 
 为每个微服务创建 Kubernetes 部署文件（YAML 格式）。以下是一个简单的 Deployment 和 Service 示例：
 
@@ -173,9 +173,9 @@ kubectl apply -f myapp-deployment.yaml
 
 这会在集群中的 default 命名空间下创建 Deployment 和 Service，并启动微服务实例。
 
-### 使用 Helm Chart 部署微服务
+## 使用 Helm Chart 部署微服务
 
-#### 1. 创建 Helm Chart
+### 1. 创建 Helm Chart
 
 建议在源码的相关目录下，使用 Helm 命令行创建一个新的 Chart，便于对 Helm Chart 图表文件进行版本化管理：
 
@@ -185,7 +185,7 @@ helm create mychart
 
 Helm 会在当前目录下生成一个包含预定义模板的目录结构。我们可以在 `mychart/templates` 目录下修改和添加 Kubernetes 资源定义文件，如 `deployment.yaml`、`service.yaml` 等。
 
-#### 2. 编辑 `values.yaml`
+### 2. 编辑 `values.yaml`
 
 `values.yaml` 文件用于定义 templates 目录下的各类资源模板中要引用到的变量。比如可以修改 `values.yaml` 如下所示：
 
@@ -229,7 +229,7 @@ ingress:
 
 `values.yaml` 文件定义了镜像信息、服务类型、端口配置以及 Ingress 规则。通过修改这些变量，可以轻松地调整应用的部署配置。
 
-#### 3. 安装 Chart
+### 3. 安装 Chart
 
 使用 `helm install` 命令或 `helm upgrade --install` 命令安装/更新安装 Chart：
 
@@ -285,7 +285,7 @@ sh "helm upgrade --install ${helmReleaseName} ${projectName}/chart -n your-names
 
 ```
 
-### 配置 Ingress
+## 配置 Ingress
 
 为了使外部流量能够访问到集群内部的服务，我们还需要配置一下 Ingress 资源。集群外部可以安装一个 Nginx（或者云服务商的 Load Balancer 负载均衡器），配置 SSL 并转发根路径到集群里的 Ingress 通过 NodePort 类型的 Service 暴露出来的 http 协议端点地址即可，其他具体路径的转发及相关安全和性能方面的配置，都交给集群里的 Ingress 来处理。以下是一个简单的 Ingress 配置示例：
 
@@ -331,15 +331,15 @@ gcp          gcp-web-wap     nginx   verify.ctrial.com   192.168.4.45,192.168.4.
 usercenter   ucd             nginx   verify.ctrial.com   192.168.4.45,192.168.4.46   80      6h15m
 ```
 
-### Kubernetes 和 Helm 的配合使用
+## Kubernetes 和 Helm 的配合使用
 
 Kubernetes 和 Helm 作为现代 DevOps 工具链中的核心组件，它们的强大之处在于它们的灵活性和扩展性。通过结合使用这两者，我们可以实现更复杂的部署场景和管理策略。
 
-#### 动态配置和环境管理
+### 动态配置和环境管理
 
 可以为不同的环境，使用不同的 values.yaml 文件（类似于 Spring Boot 的 Profile），无需修改模板文件。例如，可以为不同环境设置不同的副本数量、资源限制和环境变量，然后通过 `helm install --values values-production.yaml` 来应用生产环境的配置，而开发环境则可以使用 `helm install --values values-dev.yaml`，非常灵活。
 
-#### 滚动更新和回滚
+### 滚动更新和回滚
 
 Kubernetes 支持滚动更新，这意味着我们可以在不中断服务的情况下更新应用。Helm 在此基础上更进一步，提供了版本控制和回滚功能。每次使用 Helm 更新应用时，都会生成一个新版本（版本信息存放在 secret 里，格式类似于 `sh.helm.release.v1.gcp-project.v1` 这样）。如果 Helm 在更新过程中出现问题，可以方便地回滚到之前的版本：
 
@@ -350,7 +350,7 @@ helm rollback myapp
 # 回滚到指定版本，如回滚到 v1，就写 1
 helm rollback myapp 1
 ```
-#### Helm 的强大生态
+### Helm 的强大生态
 
 Helm 拥有丰富的官方 Chart 仓库和社区维护的 Chart 仓库，涵盖了常见的数据库、中间件、应用框架等，极大地简化了应用的部署和运维，比如用 Helm 安装 ES：
 
@@ -367,7 +367,7 @@ helm install elasticsearch elastic/elasticsearch --version 7.8.1 --namespace mid
 ```
 
 
-### 小结
+## 小结
 
 Helm Chart 使得部署过程变得更加可重复和可移植，Kubernetes 则提供了强大的资源管理能力和容器编排能力，能最大程度地确保应用程序在生产环境中的高可用性和可扩展性。
 
