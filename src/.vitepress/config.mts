@@ -39,7 +39,49 @@ export default defineConfig({
         items: [
           { text: '使用 Kubernetes 和 Helm Chart 部署和管理微服务', link: '/posts/cloud-native/k8s-and-helm-chart' }
         ]
-      }
+      },
+      {
+        text: '敏捷与 DevOps',
+        collapsed: true,
+        items: [
+          { text: '即将上线', link: '/posts/devops/be-coming-soon' }
+        ]
+      },
+      {
+        text: '前端',
+        collapsed: true,
+        items: [
+          { text: '即将上线', link: '/posts/front-end/be-coming-soon' }
+        ]
+      },
+      {
+        text: '大数据',
+        collapsed: true,
+        items: [
+          { text: '即将上线', link: '/posts/big-data/be-coming-soon' }
+        ]
+      },
+      {
+        text: 'AI',
+        collapsed: true,
+        items: [
+          { text: '即将上线', link: '/posts/ai/be-coming-soon' }
+        ]
+      },
+      {
+        text: '研发管理',
+        collapsed: true,
+        items: [
+          { text: '即将上线', link: '/posts/tech-management/be-coming-soon' }
+        ]
+      },
+      {
+        text: '杂谈',
+        collapsed: true,
+        items: [
+          { text: '即将上线', link: '/posts/unclassified/be-coming-soon' }
+        ]
+      },
     ],
 
     search: {
