@@ -54,10 +54,10 @@ Helm 是适用于 Kubernetes 集群的包管理工具，它用 Helm Chart（Char
 
 有了 Helm，就可以轻松地将复杂的 Kubernetes 应用打包成一个 Chart 包，并进行安装、更新、版本控制和复用了。
 
-### Helm 图表的主要组成部分包括如下
+### Helm 图表的主要组成部分
 
 1. **Chart.yaml**：定义图表的基本信息元数据，如名称、版本、描述等。
-2. **values.yaml**：包含用户可自定义的配置值，通过该文件可以覆盖默认配置，这个文件最为重要。
+2. **values.yaml**：包含用户可自定义的配置值，通过该文件可以覆盖默认配置，**这个文件最为重要**。
 3. **templates/**：存放所有 Kubernetes 资源的模板文件，这些模板文件使用 Go 模板语言编写，里面基本上都是一些变量占位符，它可以根据 `values.yaml` 和 `_helpers.tpl` 中的值进行动态渲染。
 4. **charts/**：存放依赖的子图表，一般不怎么用，否则可能会加大复杂度。
 5. **templates/_helpers.tpl**：存放模板的辅助函数，可以在其他模板文件中引用。
@@ -165,7 +165,7 @@ spec:
 
 Deployment 资源的配置文件里定义了微服务的副本数（replicas 字段）、镜像（image 字段）和端口（containerPort 字段）信息，Service 资源的配置文件里则为那个 Deployment 微服务提供了稳定的访问地址和端口。具体来说，因为 Service 的 type 类型字段的值是 NodePort，那在集群外部就可以通过 http://集群内任一服务器节点的ip地址:30001 这个地址来访问。
 
-将这个文件保存为 `myapp-deployment.yaml`，然后应用到 Kubernetes 集群中（要说明一下，下面的 kubectl 命令里都没有用 -n 选项来指定命名空间，不指定的话，Kubernetes 默认会使用自带的、名为 **default** 的命名空间）：
+将这个文件保存为 `myapp-deployment.yaml`，然后应用到 Kubernetes 集群中（要说明一下，下面的 kubectl 命令和 helm 命令里都没有用 -n 选项来指定命名空间，不指定的话，Kubernetes 默认会使用自带的、名为 **default** 的命名空间）：
 
 ```sh
 kubectl apply -f myapp-deployment.yaml
@@ -239,7 +239,7 @@ helm install myapp ./mychart
 
 这会根据 `values.yaml` 文件生成 Kubernetes 资源，并在集群中部署应用。
 
-也可以在本地打包 Chart 并推送到 Harbor Registry 里，推送前需要先 docker login，并确保账号有权限上传 helm chart 文件。
+也可以在本地打包 Chart 并推送到 Harbor Registry 里，推送前需要先执行 `helm registry login`，并确保账号有权限上传 helm chart 文件。
 
 ```sh
 # 在 Chart.yaml 文件所在的目录下执行下面的命令，-d . 表示将打出来的 tgz 压缩包保存在当前目录下
@@ -287,7 +287,7 @@ sh "helm upgrade --install ${helmReleaseName} ${projectName}/chart -n your-names
 
 ## 配置 Ingress
 
-为了使外部流量能够访问到集群内部的服务，我们还需要配置一下 Ingress 资源。集群外部可以安装一个 Nginx（或者云服务商的 Load Balancer 负载均衡器），配置 SSL 并转发根路径到集群里的 Ingress 通过 NodePort 类型的 Service 暴露出来的 http 协议端点地址即可，其他具体路径的转发及相关安全和性能方面的配置，都交给集群里的 Ingress 来处理。以下是一个简单的 Ingress 配置示例：
+为了使外部流量能够访问到集群内部的服务，我们还需要配置一下 Ingress 资源。集群外部可以安装一个 Nginx（或者云服务商的 Load Balancer 负载均衡器），**配置 SSL 并转发根路径到集群里的 Ingress 通过 NodePort 类型的 Service 暴露出来的 http 协议端点地址即可，其他具体路径的转发及相关安全和性能方面的配置，都交给集群里的 Ingress 来处理**。以下是一个简单的 Ingress 配置示例：
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -319,7 +319,7 @@ kubectl apply -f myapp-ingress.yaml
 
 这个 Ingress 规则会将 `myapp.local` 域名下的所有请求转发到 `myapp` 服务的 80 端口。
 
-下面是我的集群里创建的一些 ingress 资源：
+下面是我的集群里创建的一些 ingress 资源，可以看到命名空间、ingress 的名称、使用的 ingress 类名、监听的 hosts 域名、ingress Pod 所在的节点 IP、ingress service 所使用的端口、ingress 创建时长等信息：
 
 ```sh
 # kubectl get ingress -A
@@ -341,7 +341,7 @@ Kubernetes 和 Helm 作为现代 DevOps 工具链中的核心组件，它们的�
 
 ### 滚动更新和回滚
 
-Kubernetes 支持滚动更新，这意味着我们可以在不中断服务的情况下更新应用。Helm 在此基础上更进一步，提供了版本控制和回滚功能。每次使用 Helm 更新应用时，都会生成一个新版本（版本信息存放在 secret 里，格式类似于 `sh.helm.release.v1.gcp-project.v1` 这样）。如果 Helm 在更新过程中出现问题，可以方便地回滚到之前的版本：
+Kubernetes 支持滚动更新，这意味着我们可以在不中断服务的情况下更新应用。Helm 在此基础上更进一步，提供了版本控制和回滚功能。每次使用 Helm 更新应用时，都会生成一个新版本（版本信息存放在相应命名空间下的 secret 里，secret 名称类似于 `sh.helm.release.v1.gcp-project.v1` 这样）。如果 Helm 在更新过程中出现问题，我们可以方便地回滚到之前的版本：
 
 ```sh
 helm upgrade myapp ./mychart
@@ -349,6 +349,8 @@ helm upgrade myapp ./mychart
 helm rollback myapp
 # 回滚到指定版本，如回滚到 v1，就写 1
 helm rollback myapp 1
+# 也可以卸载应用
+helm uninstall myapp
 ```
 ### Helm 的强大生态
 
@@ -362,7 +364,7 @@ helm install elasticsearch elastic/elasticsearch --version 7.8.1 --namespace mid
 或
 
 ```sh
-# 使用自定义的 values.yaml 安装 ES 到集群的 middleware 命名空间里，在自定义的 values.yaml 文件里可以指定 ES 使用的实际存储类等信息
+# 使用自定义的 values.yaml 安装 ES 到集群的 middleware 命名空间里，在自定义的 values.yaml 文件里可以指定 ES 使用的实际存储类（如 NFS 存储类）等信息
 helm install elasticsearch elastic/elasticsearch --version 7.8.1 --namespace middleware -f values.yaml
 ```
 
