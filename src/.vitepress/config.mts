@@ -30,7 +30,8 @@ export default defineConfig({
           { text: '消息摘要、加解密、签名、证书', link: '/posts/2024/09-digest-crypto-sign-cert' },
           { text: 'Vue 前端资源本地缓存优化', link: '/posts/2024/08-vue-assets-cache-optimization' },
           { text: '使用 Python 脚本监控域名和 SSL 证书的有效期', link: '/posts/2024/07-use-python-monitor-domain-and-ssl' },
-          { text: 'Spring Boot 内嵌 Tomcat 容器的网络协议简单压测对比', link: '/posts/2024/06-tomcat-nio-vs-apr' }
+          { text: 'Spring Boot 内嵌 Tomcat 容器的网络协议简单压测对比', link: '/posts/2024/06-tomcat-nio-vs-apr' },
+          { text: '容器里的 Java 应用 TLS 1.3 握手失败问题复盘', link: '/posts/2024/05-docker-tls-handshake-failure' }
         ]
       },
       {
