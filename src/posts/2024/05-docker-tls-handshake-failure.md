@@ -128,7 +128,7 @@ public class TLSInfo {
 
 编译、运行 `TLSInfo`，输出如下：
 
-```sh
+```
 Enabled TLS Protocols: [TLSv1.3, TLSv1.2]
 Enabled Cipher Suites: [TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_GCM_SHA384, TLS_RSA_WITH_AES_128_GCM_SHA256, TLS_RSA_WITH_AES_256_CBC_SHA256, TLS_RSA_WITH_AES_128_CBC_SHA256, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
 ```
@@ -284,3 +284,281 @@ curl -v https://verify.ctrial.com/ucd/
 * 证书信息：显示服务器的证书详细信息，包括颁发者、主题和有效期，以及包含服务器证书、中间证书、根证书的证书链信息。
 
 不管怎么样，用 curl 访问 TLS 1.3 站点**是正常的**。但需要注意的是，curl 使用的是 OpenSSL 库来实现其 TLS/SSL 功能，Java 则是使用 Java Cryptography Architecture (JCA) 和 Java Secure Socket Extension (JSSE) 自己实现了 SSL/TLS，所以两者支持的加密套件并不一样，不能一概而论。
+
+### Java cacerts 根证书
+
+Java 自带一个 keystore 文件，称为 cacerts，默认路径是 `$JAVA_HOME/jre/lib/security/cacerts`（或 `$JAVA_HOME/lib/security/cacerts`），其中包含了许多公认的受信任的根证书（由 Oracle 进行维护），使得 Java 应用能够信任这些 CA 签发的证书。
+
+这里稍微延伸讲一下为什么 Java 默认不使用操作系统的根证书信任库，主要有下面几个原因：
+
+* 跨平台一致性: Java 是跨平台的，而不同操作系统的信任库格式和位置可能会有所不同。通过使用自己的 cacerts 文件，Java 可以确保应用程序在所有平台上都有一致的行为和配置。
+* 独立性: 依赖于操作系统的信任库可能会导致一些不可预测的行为，尤其是在不同的操作系统版本或配置之间。因此，Java 自己管理一套信任库，可以减少由于操作系统变更导致的问题。
+* 安全性和控制: 通过维护自己的 cacerts 文件，Java 可以更严格地控制哪些证书可以被信任。这对于运行在不同环境/平台中的 Java 应用程序来说，可以提供额外的安全保障。 
+* 更新和管理: Java 可以独立于操作系统进行证书更新和管理。这样，我们可以更方便灵活地添加、删除或更新信任的证书，而不必依赖操作系统的更新。
+
+#### 为什么要导入根证书？
+
+我们知道服务器的 SSL 证书通常由受信任的证书颁发机构（CA）来签发。为了验证服务器证书的有效性，客户端需要信任这个 CA。如果 Java 的 cacerts 文件里没有某些服务器证书的 CA 根证书（当然，这种情况的概率是很小的，除非是自签名的根证书），就会导致 Java 应用不信任这个服务器证书，进而导致 TLS 握手失败。
+
+#### 导入根证书的步骤
+
+我们可以先更新下系统的根证书存储，然后将系统根证书导入到 Java cacerts 文件里，步骤如下：
+
+1. 安装系统根证书包：
+   ```sh
+   apk add ca-certificates
+   ```
+
+2. 更新系统根证书：
+   ```sh
+   update-ca-certificates
+   ```
+
+3. 查找系统根证书存储的位置，通常在 `/etc/ssl/certs/ca-certificates.crt`。
+
+4. 使用 `keytool` 命令将系统根证书导入 Java `cacerts` 文件：
+   ```sh
+   sudo keytool -import -trustcacerts -file /etc/ssl/certs/ca-certificates.crt -keystore $JAVA_HOME/jre/lib/security/cacerts -storepass changeit
+   ```
+
+   请注意：
+   - `$JAVA_HOME` 这个环境变量需要存在且有效。
+   - `changeit` 是 Java `cacerts` 文件的默认密码，如果已更改，请使用新的密码，如果没更改，使用 changeit 就行。
+
+5. 确认导入的证书：
+   ```sh
+   sudo keytool -list -keystore $JAVA_HOME/jre/lib/security/cacerts -storepass changeit
+   ```
+
+执行 `apk add ca-certificates` 和 `update-ca-certificates` 命令会更新系统的根证书存储，不会直接影响 Java 的 `cacerts` 文件。Java 的 `cacerts` 文件是独立的，默认情况下不会自动同步系统的根证书存储，所以可以通过以上步骤来将系统的根证书信息同步到 Java 的 `cacerts` 文件里来。
+
+通常来讲，这样就够了，因为更新之后的系统根证书存储里，基本上覆盖了市面上所有的 CA 根证书信息，也就意味着一般不需要再手动把服务器证书的根证书信息抽取出来进行导入了。
+
+只要不是自签名的根证书，由 CA 签发的服务器证书，肯定是可以通过系统的根证书存储验证的。当然，系统根证书信息被同步到 Java 的 `cacerts` 文件里后，服务器证书也可以被 Java 所信任。
+
+如果是自签名的服务器证书（内部测试使用），也可以导入到 Java 的 `cacerts` 文件里，这里又分成两种情况：
+
+* 直接自签名的服务器证书：导入自签名的服务器证书。
+* 使用自签名 CA 根证书签发的服务器证书：导入自签名的 CA 证书，这样的话 Java 应用程序将信任由这个 CA 证书签发的任何服务器证书。
+
+不过，这个方案最终也没奏效，报错依旧。
+
+### 启用 SSL 调试
+
+可以通过设置 Java 的系统属性来启用 SSL 调试，输出详细的 SSL 调试信息，这样会打印出握手过程中发生的每一步，帮助我们识别出问题所在。
+
+#### 启用 SSL 调试的步骤
+
+1. **设置系统属性**：
+   在运行 Java 应用程序时，可以通过添加 JVM 系统属性参数来启用详细的调试输出：
+   ```sh
+   # SSLTest 是我测试用的类，也可以对 jar 包开启
+   java -Djavax.net.debug=all SSLTest
+   ```
+
+2. **查看调试输出**：
+   运行后，控制台上会输出大量冗长的调试信息。这些信息包括：
+   - Java cacerts 文件里保存的根证书信息（篇幅很长）
+   - 各种 SSL 协议的消息（如 ClientHello、ServerHello 等）。
+   - 密钥交换和加密算法的选择。
+   - 证书验证的详细信息。
+   - 握手过程中的各个步骤和状态变化。
+
+#### 关键点
+
+调试输出中包含大量信息，我们只需要关注以下关键点：
+
+1. **ClientHello 和 ServerHello**：
+   - ClientHello：显示客户端支持的 SSL/TLS 版本（**`supported_versions`** 字段）和加密套件（**`cipher suites`** 字段）。
+   - ServerHello：显示服务器选择的 SSL/TLS 版本（**`selected version`** 字段）和加密套件（**`cipher suite`** 字段），但是如果握手失败了，就看不到 ServerHello 相关信息了。
+
+2. **握手失败原因**：
+   - 查看是否有 “handshake_failure” 或其他的错误提示。
+   - 这些错误提示一般会提供关于问题的具体细节，如不支持的协议版本或加密套件。
+
+3. **证书验证**：
+   - 确认客户端和服务器都能正确地交换和验证证书。
+   - 查看证书链是否完整以及是否有任何验证错误。
+
+我这样尝试后，日志里果然出现了之前那个 `javax.net.ssl.SSLHandshakeException: Received fatal alert: handshake_failure` 错误，但是看不到更多的错误信息了，咱们继续。
+
+### 查询服务器端支持的所有 TLS 版本加密套件
+
+前面我们用 TLSInfo 测试类测试了下容器里的 jdk 所能支持的全部 TLS 版本和加密套件，现在我们再来看看服务器端的情况。因为在 TLS 握手过程中，服务器会根据客户端发送的支持的 TLS 版本和加密套件（在 `ClientHello` 消息里可以看到），从自己支持的 TLS 版本和加密套件中选择一个与客户端匹配的组合。如果没有找到匹配的组合，TLS 握手将会失败。
+
+可以使用 nmap 工具，对服务器支持的 TLS 版本和加密套件进行扫描。nmap 是一个强大的网络扫描工具，一般是用来扫描目标地址开放的端口列表的，但也可以通过特定脚本来**枚举** SSL/TLS 的配置，包括加密套件、协议版本等。
+
+#### 使用 nmap 的具体步骤
+
+1. **安装 nmap**：
+   在大多数 Linux 发行版中，可以通过包管理器安装 nmap。例如，在 Debian 或 Ubuntu 中：
+   ```sh
+   sudo apt-get install nmap
+   ```
+   
+   在 CentOS 中：
+   ```sh
+   sudo yum install nmap
+   ```
+
+   Mac 上可以用 `brew install nmap` 进行安装。
+
+2. **运行 nmap 脚本**：
+   使用 `--script` 选项指定 `ssl-enum-ciphers` 脚本（顾名思义这是一个用于枚举 SSL/TLS 协议和加密套件的脚本），扫描特定的端口（通常是 443 端口）：
+   ```sh
+   nmap --script ssl-enum-ciphers -p 443 verify.ctrial.com
+   ```
+
+3. **解释输出结果**：
+   输出结果将显示服务器支持的 TLS 版本和加密套件。例如：
+   ```
+   Starting Nmap 7.95 ( https://nmap.org ) at 2024-06-07 10:22 CST
+   Nmap scan report for verify.ctrial.com (192.168.0.50)
+   Host is up (0.012s latency).
+   rDNS record for 192.168.0.50: baoleiji.ucmed.cn
+
+   PORT    STATE SERVICE
+   443/tcp open  https
+   | ssl-enum-ciphers:
+   |   TLSv1.2:
+   |     ciphers:
+   |       TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 (ecdh_x25519) - A
+   |       TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (ecdh_x25519) - A
+   |       TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (ecdh_x25519) - A
+   |       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 (ecdh_x25519) - A
+   |       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 (ecdh_x25519) - A
+   |       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA (ecdh_x25519) - A
+   |       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA (ecdh_x25519) - A
+   |       TLS_RSA_WITH_AES_128_GCM_SHA256 (rsa 2048) - A
+   |       TLS_RSA_WITH_AES_256_GCM_SHA384 (rsa 2048) - A
+   |       TLS_RSA_WITH_AES_128_CBC_SHA256 (rsa 2048) - A
+   |       TLS_RSA_WITH_AES_256_CBC_SHA256 (rsa 2048) - A
+   |       TLS_RSA_WITH_AES_128_CBC_SHA (rsa 2048) - A
+   |       TLS_RSA_WITH_AES_256_CBC_SHA (rsa 2048) - A
+   |     compressors:
+   |       NULL
+   |     cipher preference: server
+   |   TLSv1.3:
+   |     ciphers:
+   |       TLS_AKE_WITH_AES_256_GCM_SHA384 (ecdh_x25519) - A
+   |       TLS_AKE_WITH_CHACHA20_POLY1305_SHA256 (ecdh_x25519) - A
+   |       TLS_AKE_WITH_AES_128_GCM_SHA256 (ecdh_x25519) - A
+   |     cipher preference: server
+   |_  least strength: A
+   ```
+
+#### 匹配客户端和服务器的加密套件
+
+在获取服务器支持的加密套件之后，需要确认客户端发送的 ClientHello 包中实际包含的加密套件（jdk 默认支持的加密套件列表和在 ClientHello 消息里实际发送的加密套件列表可能会不同，实际发送的列表通常是默认列表的一个子集，需要注意下）是否与服务器支持的加密套件匹配。如果有至少一个共同的加密套件，那么握手应该就能成功。在 SSL 的 debug 调试日志中，ClientHello 包里会显示客户端实际发送的加密套件列表。
+
+报握手失败的 ClientHello 包里看到的实际 TLS 协议版本和加密套件如下所示：
+
+```
+"supported_versions (43)": {
+      "versions": [TLSv1.3]
+    },
+```
+
+和
+
+```sh
+"cipher suites"       : "[TLS_AES_256_GCM_SHA384(0x1302), TLS_AES_128_GCM_SHA256(0x1301)]",
+```
+
+也就是实际发送的是 TLS 1.3 版本，加密套件是 TLS 1.3 支持的 TLS_AES_256_GCM_SHA384 和 TLS_AES_128_GCM_SHA256 这两个。然后上面用 nmap 扫描输出的 3 个 TLS 1.3 的加密套件里有两个是：
+
+* TLS_AKE_WITH_AES_256_GCM_SHA384
+* TLS_AKE_WITH_AES_128_GCM_SHA256
+
+前缀（TLS_AKE）有点不一样，但它们实际上就是标准的 TLS 1.3 加密套件：
+
+* TLS_AES_256_GCM_SHA384
+* TLS_AES_128_GCM_SHA256
+
+因此，客户端（我的 Java 应用）和服务器支持以下共同的 TLSv1.3 加密套件：
+
+* TLS_AES_256_GCM_SHA384
+* TLS_AES_128_GCM_SHA256
+
+按理说，TLS 握手不会失败。但现实就是，握手失败了。
+
+排查到这里，我实在是没啥办法了。不过幸运的是我 google 了一下 “eclipse-temurin jdk 8 tls 1.3”，被我看到了下面这个 GitHub Issue，而这个正是解决问题的真正答案所在。
+
+### 安装 libgcc 
+
+搜到了这么一个 GitHub Issue [Missing ECDHE Ciphers in 8-jdk-alpine](https://github.com/adoptium/temurin-build/issues/3002)，看起来跟我的问题很接近。尤其是里面的一个评论提到了在安装 **libgcc** 前后，jdk 所支持的加密套件列表有很大的差别，nice，这个可能就是答案所在了！
+
+大家知道，`libgcc` 是 GCC（GNU Compiler Collection）的运行时库，包含了一些基本的低级支持功能，如异常处理、内存管理和特定硬件指令的支持。虽然这些功能在一般情况下不会直接影响到 SSL/TLS，但某些高级加密操作可能依赖于这些底层功能。正如 Issue 里提到的，缺少 `libgcc` 库，会导致 `libsunec.so` 库存在问题。而 `libsunec.so` 是 JDK 的一部分，用来处理基于椭圆曲线加密 (ECC) 的操作，如 ECDHE 等以 EC 开头的加密套件的相关操作。如果缺少 `libgcc`，`libsunec.so` 可能无法正确加载其依赖的某些底层库，导致相关加密功能不可用，如 TLS 握手失败。
+
+#### 在容器中安装 libgcc
+
+在 Alpine Linux 容器中，安装 `libgcc` 库的具体步骤如下：
+
+1. **更新包管理器索引**：
+   ```sh
+   apk update
+   ```
+
+2. **安装 libgcc**：
+   ```sh
+   apk add --no-cache libgcc
+   ```
+
+安装 `libgcc` 后，`libsunec.so` 这个库能够正确加载并使用所有的底层依赖库，恢复了对完整的加密套件列表的支持，这使得客户端（Java 应用）可以给服务器端发送更多的加密套件，从而增加了与服务器成功匹配的机会，解决握手失败的问题。
+
+#### 验证 libgcc 的作用
+
+在安装 `libgcc` 之后，再次运行之前的测试类，观察是否还会出现握手失败的问题。如下所示：
+
+1. **运行 TLSInfo.java**:
+   ```sh
+   java TLSInfo
+   ```
+
+2. **运行 SSLTest.java**:
+   ```sh
+   java SSLTest
+   ```
+
+输出显示一切正常，测试类可以成功运行，并且打印出来的可支持的加密套件比之前多了一倍，之前是 21 种，现在变成了 45 种。
+
+```
+Enabled TLS Protocols: [TLSv1.3, TLSv1.2]
+Enabled Cipher Suites: [TLS_AES_256_GCM_SHA384, TLS_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, TLS_DHE_DSS_WITH_AES_256_GCM_SHA384, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_DSS_WITH_AES_128_GCM_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_DHE_DSS_WITH_AES_256_CBC_SHA256, TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384, TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384, TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256, TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_DHE_DSS_WITH_AES_256_CBC_SHA, TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA, TLS_ECDH_RSA_WITH_AES_256_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA, TLS_RSA_WITH_AES_256_GCM_SHA384, TLS_RSA_WITH_AES_128_GCM_SHA256, TLS_RSA_WITH_AES_256_CBC_SHA256, TLS_RSA_WITH_AES_128_CBC_SHA256, TLS_RSA_WITH_AES_256_CBC_SHA, TLS_RSA_WITH_AES_128_CBC_SHA, TLS_EMPTY_RENEGOTIATION_INFO_SCSV]
+```
+
+可以用 strace 工具来跟踪一下 Java 应用加载的共享库文件，来看看 libgcc_s.so.1 是否被正确加载到了。
+
+先执行 `apk add --no-cache strace` 安装 `strace` 工具，再运行：
+
+```sh
+strace -f -e trace=all java TLSInfo 2>&1 | grep '\.so'
+```
+
+关注下面这些信息：
+
+```
+[pid  1816] stat("/opt/java/openjdk/jre/lib/ext/amd64/libsunec.so",  <unfinished ...>
+[pid  1816] stat("/opt/java/openjdk/jre/lib/ext/libsunec.so",  <unfinished ...>
+[pid  1816] stat("/opt/java/openjdk/jre/lib/amd64/libsunec.so", {st_mode=S_IFREG|0755, st_size=291304, ...}) = 0
+[pid  1816] open("/opt/java/openjdk/jre/lib/amd64/libsunec.so", O_RDONLY|O_LARGEFILE) = 14
+[pid  1816] open("/opt/java/openjdk/jre/lib/amd64/libsunec.so", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 14
+[pid  1816] open("/opt/java/openjdk/jre/lib/amd64/server/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[pid  1816] open("/opt/java/openjdk/jre/lib/amd64/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[pid  1816] open("/opt/java/openjdk/jre/../lib/amd64/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[pid  1816] open("/opt/java/openjdk/bin/../lib/amd64/jli/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[pid  1816] open("/opt/java/openjdk/bin/../lib/amd64/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[pid  1816] open("/lib/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[pid  1816] open("/usr/local/lib/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = -1 ENOENT (No such file or directory)
+[pid  1816] open("/usr/lib/libgcc_s.so.1", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 14
+```
+
+可以看到 `libsunec.so` 和 `libgcc_s.so.1` 确实都被加载了，而 `/usr/lib/libgcc_s.so.1` 这个正是我们刚刚安装的那个，这就说明 Java 应用现在可以使用 `libgcc` 提供的功能了！
+
+## 总结
+
+林林总总各种方案，总结下来有一个感觉就是更换基础镜像，尤其是自己不熟悉的镜像如基于 Alpine 的 eclipse-temurin openjdk 发行版镜像，还是有一些风险的，因为你不知道它里面裁剪了哪些库文件或者工具，导致意外的问题出现。
+
+不过也通过对这次问题的排查，了解到了一些基础库的作用，可以说是为在容器环境中运行 Java 应用提供了宝贵的教训和参考了。
+
+后续再考虑一下升级 JDK 版本了，JDK 8 也真的是太老了……
