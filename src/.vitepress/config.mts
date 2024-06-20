@@ -39,7 +39,7 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: '使用 Kubernetes 和 Helm Chart 部署和管理微服务', link: '/posts/cloud-native/k8s-and-helm-chart' },
-          { text: '使用 K8s Service + Istio 替换 Consul', link: '/posts/cloud-native/using-k8s-and-istio-to-replace-consul' }
+          { text: '使用 K8s Service + Istio 替换 Consul', link: '/posts/cloud-native/k8s-and-istio-replace-consul' }
         ]
       },
       {
