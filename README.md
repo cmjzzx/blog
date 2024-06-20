@@ -30,8 +30,8 @@
 ## 联系我
 
 如果你有任何问题或建议，欢迎通过以下方式联系我：
-- 邮箱：[你的邮箱地址](huoliuxing0503@gmail.com)
-- GitHub：[你的GitHub主页](https://github.com/cmjzzx)
+- 邮箱：[huoliuxing0503@gmail.com](huoliuxing0503@gmail.com)
+- GitHub：[https://github.com/cmjzzx](https://github.com/cmjzzx)
 
 ## 开源许可证
 
