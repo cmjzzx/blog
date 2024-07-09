@@ -10,7 +10,7 @@
 
 ## 1、修改网关微服务的配置
 
-首先要做的，就是修改网关微服务的 Apollo 配置文件。你可能会问为什么？因为我们需要将 `uri` 从 `lb://` 格式改为 `http://` 格式，并指向 Kubernetes 的 Service 地址。这样，我们的网关微服务就不会再去请求 Consul 服务注册中心来发现其他应用微服务的地址了。
+首先要做的，就是修改网关微服务的 Apollo 配置文件。你可能会问为什么？因为我们需要将 `uri` 从 `lb://` 格式改为 `http://` 格式，并指向 Kubernetes 的 Service 地址，同时设置 spring.cloud.consul.enabled=false 来禁用所有 Consul 相关功能。这样，我们的网关微服务就不会再去请求 Consul 服务注册中心来发现其他应用微服务的地址了。
 
 ### 原始 Apollo 配置（使用 Consul）
 
@@ -40,6 +40,8 @@ spring:
         - Path=/user/**
         filters:
         - StripPrefix=1
+    consul:
+      enabled: false
 ```
 
 这样改完之后，网关微服务将直接通过 Kubernetes Service 进行访问，不再需要依赖 Consul 来发现服务。
