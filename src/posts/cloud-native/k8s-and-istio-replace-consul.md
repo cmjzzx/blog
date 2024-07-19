@@ -98,6 +98,19 @@ gcp:
 
 如果有很多个微服务模块都依赖了 gcp-feign-service jar，那这些微服务的 Apollo 配置里，需要把所有 FeignClient 接口类里指定的各个应用微服务的 Kubernetes Service FQDN url 地址，都配上，上面只是演示配了一个 user 微服务的 url，需要注意一下。
 
+如果在开发人员的电脑本地启动服务进行调试，在 JAVA_OPTS 环境变量里配置 apollo.meta 系统属性时，需要配置成 NodePort 类型的 apollo meta 的地址，这样才能在集群外部访问到集群里面的 apollo config 服务。此时需要注意下，要给集群里的 apollo config 容器的 JAVA_OPTS 环境变量再加下面 3 个系统属性：
+
+```sh
+# eureka.instance.ip-address 和 eureka.instance.non-secure-port 需要换成实际的节点 IP 和节点端口
+-Deureka.instance.prefer-ip-address=true -Deureka.instance.ip-address=192.168.4.43 -Deureka.instance.non-secure-port=32705
+```
+
+否则，apollo meta 会返回集群内部的 Pod 实例 IP 和端口给本机使用，这个地址本地肯定是无法访问的，这一点要稍微注意一下。
+
+另外也要说下，把地址硬编码成上面这个，不会影响 apollo config 服务本身向 Eureka 进行注册，也不会影响 apollo admin 服务从 Eureka 获取 apollo config 的地址，因为这个 NodePort 类型的地址，在集群的 Pod 里面访问，网络也是通的。
+
+当然，以上设置仅限于要在本地调试代码并连接集群内部的 apollo 的情况，如果不是这种情况，**不要进行这些设置**。
+
 ## 4、创建 VirtualService
 
 最后，我们需要为每个应用微服务创建 Istio 的 VirtualService。这样每个应用微服务 Pod 容器组里的 `istio-proxy` Sidecar 代理容器就可以解析这个 FQDN，并通过 Istio 进行路由转发和流量管理。
