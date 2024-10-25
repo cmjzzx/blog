@@ -40,7 +40,8 @@ export default defineConfig({
         items: [
           { text: '使用 Kubernetes 和 Helm Chart 部署和管理微服务', link: '/posts/cloud-native/k8s-and-helm-chart' },
           { text: '使用 K8s Service + Istio 替换 Consul', link: '/posts/cloud-native/k8s-and-istio-replace-consul' },
-          { text: '使用 K8s ConfigMap 替换 Apollo', link: '/posts/cloud-native/k8s-replace-apollo' }
+          { text: '使用 K8s ConfigMap 替换 Apollo', link: '/posts/cloud-native/k8s-replace-apollo' },
+          { text: '微服务架构与云原生架构', link: '/posts/cloud-native/microservice-vs-cloud-native' }
         ]
       },
       {
