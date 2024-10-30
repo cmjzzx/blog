@@ -83,7 +83,7 @@ export default defineConfig({
         text: '杂谈',
         collapsed: true,
         items: [
-          { text: '即将上线', link: '/posts/unclassified/be-coming-soon' }
+          { text: '24 种设计模式的代码示例', link: '/posts/unclassified/design-pattern-code' }
         ]
       },
     ],
