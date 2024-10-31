@@ -896,4 +896,220 @@ public class ProxyPatternDemo {
 
 ## 三、行为型模式
 
-未完待续……
+### 1、责任链模式
+
+责任链模式（Chain of Responsibility Pattern）是一种行为型设计模式，它允许将请求沿着处理者链进行传递，直到有一个处理者处理它。这样可以解耦请求的发送者和接收者，从而让多个处理者有机会处理请求。
+
+```java
+// 抽象处理者
+abstract class Handler {
+    protected Handler nextHandler;
+
+    public void setNextHandler(Handler nextHandler) {
+        this.nextHandler = nextHandler;
+    }
+
+    public abstract void handleRequest(int request);
+}
+
+// 具体处理者A
+class ConcreteHandlerA extends Handler {
+    @Override
+    public void handleRequest(int request) {
+        if (request < 10) {
+            System.out.println("Handler A handling request: " + request);
+        } else if (nextHandler != null) {
+            nextHandler.handleRequest(request);
+        }
+    }
+}
+
+// 具体处理者B
+class ConcreteHandlerB extends Handler {
+    @Override
+    public void handleRequest(int request) {
+        if (request < 20) {
+            System.out.println("Handler B handling request: " + request);
+        } else if (nextHandler != null) {
+            nextHandler.handleRequest(request);
+        }
+    }
+}
+
+// 具体处理者C
+class ConcreteHandlerC extends Handler {
+    @Override
+    public void handleRequest(int request) {
+        if (request < 30) {
+            System.out.println("Handler C handling request: " + request);
+        } else {
+            System.out.println("Request " + request + " not handled.");
+        }
+    }
+}
+
+// 测试责任链模式
+public class ChainOfResponsibilityExample {
+    public static void main(String[] args) {
+        // 创建处理者
+        Handler handlerA = new ConcreteHandlerA();
+        Handler handlerB = new ConcreteHandlerB();
+        Handler handlerC = new ConcreteHandlerC();
+
+        // 设置责任链
+        handlerA.setNextHandler(handlerB);
+        handlerB.setNextHandler(handlerC);
+
+        // 发送请求
+        handlerA.handleRequest(5);  // Handler A handling request: 5
+        handlerA.handleRequest(15); // Handler B handling request: 15
+        handlerA.handleRequest(25); // Handler C handling request: 25
+        handlerA.handleRequest(35); // Request 35 not handled.
+    }
+}
+```
+
+在这个示例中：
+
+1. **抽象处理者**：
+   - `Handler` 类是一个抽象类，定义了处理请求的方法 `handleRequest` 和设置下一个处理者的方法 `setNextHandler`。
+
+2. **具体处理者**：
+   - `ConcreteHandlerA`、`ConcreteHandlerB` 和 `ConcreteHandlerC` 是具体的处理者类，分别实现了请求处理逻辑。
+   - 每个处理者会检查请求是否符合自己的处理条件，如果符合则处理请求，否则将请求转发给下一个处理者。
+
+3. **责任链设置**：
+   - 在 `main` 方法中创建了多个处理者并设置了它们的责任链。
+
+4. **请求处理**：
+   - 调用 `handlerA.handleRequest(request)`，请求会沿着责任链传递，直到找到合适的处理者。
+
+责任链模式提供了一种将请求传递给多个处理者的方式，使得请求的发送者和接收者解耦。它可以灵活地添加或修改处理者，且可以避免多个处理者之间的紧密耦合。
+
+### 2、命令模式
+
+命令模式（Command Pattern）是一种行为型设计模式，它将请求封装为对象，从而使我们可以使用不同的请求、队列或日志请求，并支持可撤销的操作。
+
+```java
+// 命令接口
+interface Command {
+    void execute();
+}
+
+// 具体命令A
+class ConcreteCommandA implements Command {
+    private Receiver receiver;
+
+    public ConcreteCommandA(Receiver receiver) {
+        this.receiver = receiver;
+    }
+
+    @Override
+    public void execute() {
+        receiver.actionA();
+    }
+}
+
+// 具体命令B
+class ConcreteCommandB implements Command {
+    private Receiver receiver;
+
+    public ConcreteCommandB(Receiver receiver) {
+        this.receiver = receiver;
+    }
+
+    @Override
+    public void execute() {
+        receiver.actionB();
+    }
+}
+
+// 接收者
+class Receiver {
+    public void actionA() {
+        System.out.println("Receiver: Performing action A");
+    }
+
+    public void actionB() {
+        System.out.println("Receiver: Performing action B");
+    }
+}
+
+// 调用者
+class Invoker {
+    private Command command;
+
+    public void setCommand(Command command) {
+        this.command = command;
+    }
+
+    public void executeCommand() {
+        if (command != null) {
+            command.execute();
+        }
+    }
+}
+
+// 测试命令模式
+public class CommandPatternExample {
+    public static void main(String[] args) {
+        // 创建接收者
+        Receiver receiver = new Receiver();
+
+        // 创建具体命令
+        Command commandA = new ConcreteCommandA(receiver);
+        Command commandB = new ConcreteCommandB(receiver);
+
+        // 创建调用者
+        Invoker invoker = new Invoker();
+
+        // 执行命令A
+        invoker.setCommand(commandA);
+        invoker.executeCommand(); // Receiver: Performing action A
+
+        // 执行命令B
+        invoker.setCommand(commandB);
+        invoker.executeCommand(); // Receiver: Performing action B
+    }
+}
+```
+
+在这个示例中：
+
+1. **命令接口**：
+   - `Command` 接口定义了一个执行命令的方法 `execute()`。
+
+2. **具体命令**：
+   - `ConcreteCommandA` 和 `ConcreteCommandB` 是具体的命令类，它们实现了 `Command` 接口，并持有一个接收者的引用。
+   - 在 `execute()` 方法中，它们调用接收者的相应方法。
+
+3. **接收者**：
+   - `Receiver` 类包含具体的业务逻辑，负责执行命令的实际操作。
+
+4. **调用者**：
+   - `Invoker` 类用于调用命令。它持有一个 `Command` 的引用，并提供 `setCommand` 方法来设置要执行的命令，`executeCommand` 方法执行命令。
+
+5. **测试命令模式**：
+   - 在 `main` 方法中，创建接收者、命令和调用者，并通过调用者执行不同的命令。
+
+命令模式通过将请求封装成对象，使得请求的发送者和接收者解耦。它允许您将请求排队、记录请求日志，并支持撤销操作，增加了系统的灵活性和可扩展性。
+
+CQRS（命令查询职责分离）与命令模式有一些相似之处，但它们并不是同一种模式，主要区别有：
+
+#### 1. 概念
+- **命令模式**：主要关注将请求封装为对象，从而实现对请求的参数化、排队、日志记录和撤销等功能。命令模式强调如何将请求与执行者解耦。
+- **CQRS**：是一种架构模式，将系统的命令（写操作）与查询（读操作）分离，分别处理。这种分离允许在处理读和写时使用不同的模型和技术。
+
+#### 2. 目的
+- **命令模式**：主要用于对象行为的封装和管理，提供灵活的请求处理。
+- **CQRS**：主要用于提升系统的性能、可扩展性和维护性，特别是在需要处理复杂业务逻辑和高并发场景时。
+
+#### 3. 应用场景
+- **命令模式**：适用于需要动态执行不同操作、支持撤销、日志记录等场景。
+- **CQRS**：适用于大型应用程序，尤其是复杂领域模型、需要高读写性能或需要分布式架构的系统。
+
+两者都涉及命令的概念，但 CQRS 的范围更广，通常在大型系统中作为一种整体架构风格，而命令模式则是一种具体的设计模式。
+
+这里展开多说一些 CQRS 相关的内容。CQRS 其实就是一种读写分离的架构模式，它将写数据和读数据的过程分开处理，从而各司其职，简化了软件架构。在 CQRS 模式下，写数据的过程通常会遵循领域驱动设计（DDD）的一些原则，以确保业务逻辑的完整性和一致性，而读数据的过程则可以更加灵活，允许开发者根据需求直接从数据库构建数据模型，可能不需要遵循领域模型的复杂性。
+
+CQRS 通常会与 DDD 一起使用，因为 DDD 强调对业务领域的深刻理解，适合处理复杂的业务逻辑，而 CQRS 则提供了一种将复杂的业务逻辑与查询操作分离的方法。这种组合能够有效提高系统的可维护性、可扩展性和灵活性，尤其在面临复杂业务需求和高并发场景时。
